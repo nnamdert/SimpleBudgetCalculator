@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Simple Budget Calculator — nnamdert.page</title>
+<meta name="description" content="A simple monthly budget calculator. Enter income and expenses and see what's left. Works offline, installable as an app.">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16232E">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+
+<!-- iOS -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Budget">
+
+<style>
+  @font-face{font-family:'Archivo';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/archivo-latin-400-normal.woff2') format('woff2')}
+  @font-face{font-family:'Archivo';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/archivo-latin-500-normal.woff2') format('woff2')}
+  @font-face{font-family:'Archivo';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/archivo-latin-600-normal.woff2') format('woff2')}
+  @font-face{font-family:'Archivo';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/archivo-latin-700-normal.woff2') format('woff2')}
+  @font-face{font-family:'Spline Sans Mono';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/spline-sans-mono-latin-400-normal.woff2') format('woff2')}
+  @font-face{font-family:'Spline Sans Mono';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/spline-sans-mono-latin-500-normal.woff2') format('woff2')}
+  @font-face{font-family:'Spline Sans Mono';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/spline-sans-mono-latin-600-normal.woff2') format('woff2')}
+
+  :root{
+    --paper:#EEF1F4;--card:#FFFFFF;--ink:#16232E;--ink-soft:#5B6B77;--line:#D8DEE4;
+    --green:#1F8A5F;--green-soft:#E3F2EB;--red:#C24141;--red-soft:#F8E7E7;
+    --c-rent:#3E5C76;--c-cc:#B0693C;--c-groc:#6B8F3D;--c-util:#8A7A9E;--c-trans:#4E8D99;
+    --c-invest:#1F8A5F;--c-subs:#A5527A;--c-fun:#C99A3C;--c-other:#7C8A94;--radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{font-size:16px}
+  body{font-family:'Archivo',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding-bottom:170px}
+  .mono{font-family:'Spline Sans Mono',monospace;font-variant-numeric:tabular-nums}
+  .wrap{max-width:760px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top)) 16px 0}
+  header{margin-bottom:22px}
+  header h1{font-size:1.55rem;font-weight:700;letter-spacing:-0.02em}
+  header p{color:var(--ink-soft);font-size:.9rem;margin-top:4px}
+  .ios-hint{display:none;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:18px;font-size:.85rem;color:var(--ink-soft);align-items:flex-start;gap:10px}
+  .ios-hint.show{display:flex}
+  .ios-hint b{color:var(--ink)}
+  .ios-hint .close{margin-left:auto;flex-shrink:0;width:44px;height:44px;margin:-10px -10px -10px 0;border:none;background:none;color:var(--ink-soft);font-size:1rem;cursor:pointer;border-radius:8px}
+  .ios-hint .close:hover{background:var(--paper)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;margin-bottom:18px}
+  .card h2{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-soft);margin-bottom:14px;display:flex;justify-content:space-between;align-items:baseline}
+  .card h2 .subtotal{font-size:1rem;color:var(--ink);text-transform:none;letter-spacing:0}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .row:last-of-type{border-bottom:none}
+  .dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+  .row label{flex:1;font-size:.95rem;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .amt{position:relative;flex-shrink:0}
+  .amt span{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:.9rem;pointer-events:none}
+  .amt input{width:128px;height:44px;padding:0 10px 0 26px;border:1px solid var(--line);border-radius:8px;font-family:'Spline Sans Mono',monospace;font-size:.95rem;text-align:right;color:var(--ink);background:#FBFCFD;-moz-appearance:textfield;appearance:textfield}
+  .amt input::-webkit-outer-spin-button,.amt input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .amt input:focus{outline:2px solid var(--ink);outline-offset:-1px;background:#fff}
+  .del{width:44px;height:44px;flex-shrink:0;border:none;background:none;color:var(--ink-soft);font-size:1.1rem;cursor:pointer;border-radius:8px}
+  .del:hover{background:var(--red-soft);color:var(--red)}
+  .del:focus-visible{outline:2px solid var(--ink)}
+  .add-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .add-row input[type=text]{flex:1;min-width:140px;height:44px;padding:0 12px;border:1px dashed var(--line);border-radius:8px;font-family:inherit;font-size:.9rem;background:transparent}
+  .add-row input[type=text]:focus{outline:2px solid var(--ink);outline-offset:-1px;border-style:solid;background:#fff}
+  .add-row button{height:44px;padding:0 16px;border:none;border-radius:8px;background:var(--ink);color:#fff;font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer}
+  .add-row button:hover{background:#2A3A47}
+  .add-row button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  .reset-row{text-align:center;margin-bottom:8px}
+  .reset-row button{min-height:44px;padding:0 14px;border:none;background:none;color:var(--ink-soft);font-family:inherit;font-size:.8rem;text-decoration:underline;cursor:pointer;border-radius:8px}
+  .reset-row button:hover{color:var(--red)}
+  footer.copyright{text-align:center;color:var(--ink-soft);font-size:.75rem;padding:6px 16px 12px}
+  footer.copyright a{color:var(--ink-soft)}
+  .summary{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(22,35,46,.08);padding:14px 16px calc(16px + env(safe-area-inset-bottom))}
+  .summary-inner{max-width:760px;margin:0 auto}
+  .totals{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;gap:12px}
+  .totals .left small,.totals .right small{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-bottom:2px}
+  .totals .left b{font-size:1rem;font-weight:600}
+  .leftover{font-size:1.45rem;font-weight:600;text-align:right;line-height:1}
+  .leftover.pos{color:var(--green)}
+  .leftover.neg{color:var(--red)}
+  .allocbar{display:flex;height:26px;border-radius:7px;overflow:hidden;background:var(--line)}
+  .seg{height:100%;transition:width .25s ease;min-width:0}
+  .seg.remain{background:repeating-linear-gradient(135deg,var(--green-soft),var(--green-soft) 6px,#CBE7DA 6px,#CBE7DA 12px)}
+  .seg.over{background:repeating-linear-gradient(135deg,var(--red-soft),var(--red-soft) 6px,#EFC9C9 6px,#EFC9C9 12px)}
+  .barnote{margin-top:7px;font-size:.75rem;color:var(--ink-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  @media (max-width:480px){.amt input{width:104px}header h1{font-size:1.3rem}.leftover{font-size:1.25rem}}
+  @media (prefers-reduced-motion:reduce){.seg{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Simple Budget Calculator</h1>
+    <p>Enter your income and expenses. The bar below tracks what's left as you type. Your numbers save automatically on this device.</p>
+  </header>
+
+  <div class="ios-hint" id="iosHint">
+    <div>To install this app on your iPhone or iPad: tap the <b>Share</b> button, then <b>Add to Home Screen</b>.</div>
+    <button type="button" class="close" id="iosHintClose" aria-label="Dismiss install hint">✕</button>
+  </div>
+
+  <section class="card" aria-labelledby="inc-h">
+    <h2 id="inc-h">Income <span class="subtotal mono" id="incomeTotal">$0</span></h2>
+    <div id="incomeRows"></div>
+    <div class="add-row">
+      <input type="text" id="newIncomeName" placeholder="Add income source (e.g. freelance)" aria-label="New income source name">
+      <button type="button" id="addIncomeBtn">Add income</button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="exp-h">
+    <h2 id="exp-h">Expenses <span class="subtotal mono" id="expenseTotal">$0</span></h2>
+    <div id="expenseRows"></div>
+    <div class="add-row">
+      <input type="text" id="newExpenseName" placeholder="Add expense category" aria-label="New expense category name">
+      <button type="button" id="addExpenseBtn">Add expense</button>
+    </div>
+  </section>
+
+  <div class="reset-row"><button type="button" id="resetBtn">Reset to defaults</button></div>
+
+  <footer class="copyright">© <span id="year"></span> <a href="https://nnamdert.page" rel="author">nnamdert.page</a>. All rights reserved.</footer>
+</div>
+
+<div class="summary" role="status" aria-live="polite">
+  <div class="summary-inner">
+    <div class="totals">
+      <div class="left">
+        <small>Income − Expenses</small>
+        <b class="mono"><span id="sumIncome">$0</span> − <span id="sumExpense">$0</span></b>
+      </div>
+      <div class="right">
+        <small id="leftoverLabel">Left over</small>
+        <div class="leftover mono pos" id="leftoverAmt">$0</div>
+      </div>
+    </div>
+    <div class="allocbar" id="allocBar" aria-hidden="true"></div>
+    <div class="barnote"><span id="pctSpent">0% of income allocated</span><span id="pctLeft"></span></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const STORAGE_KEY = 'sbc-state-v1';
+const HINT_KEY = 'sbc-ios-hint-dismissed';
+const DEFAULT_STATE = {
+  income: [
+    {name:'Primary paycheck (take-home)', amount:5200, color:'#1F8A5F'},
+    {name:'Side income', amount:600, color:'#4E8D99'},
+  ],
+  expense: [
+    {name:'Rent', amount:1800, color:'var(--c-rent)'},
+    {name:'Credit card payment', amount:450, color:'var(--c-cc)'},
+    {name:'Groceries', amount:500, color:'var(--c-groc)'},
+    {name:'Utilities & internet', amount:220, color:'var(--c-util)'},
+    {name:'Transportation / gas', amount:250, color:'var(--c-trans)'},
+    {name:'Investing / retirement', amount:600, color:'var(--c-invest)'},
+    {name:'Subscriptions', amount:80, color:'var(--c-subs)'},
+    {name:'Dining & entertainment', amount:300, color:'var(--c-fun)'},
+  ]
+};
+const customColors = ['var(--c-other)','#7A6C5D','#5D7A6C','#6C5D7A','#946A4C'];
+let customIdx = 0;
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return structuredClone(DEFAULT_STATE);
+    const parsed = JSON.parse(raw);
+    if(!Array.isArray(parsed.income) || !Array.isArray(parsed.expense)) throw 0;
+    const clean = (arr) => arr.filter(i => i && typeof i.name === 'string')
+      .map(i => ({name: i.name.slice(0,60), amount: Number(i.amount) || 0, color: typeof i.color === 'string' ? i.color : 'var(--c-other)'}));
+    return {income: clean(parsed.income), expense: clean(parsed.expense)};
+  }catch(e){ return structuredClone(DEFAULT_STATE); }
+}
+function saveState(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+let state = loadState();
+
+const fmt = n => '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function renderRows(type){
+  const container = document.getElementById(type + 'Rows');
+  container.innerHTML = '';
+  state[type].forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <span class="dot" style="background:${item.color}"></span>
+      <label for="${type}-${i}">${esc(item.name)}</label>
+      <div class="amt"><span>$</span>
+        <input type="number" id="${type}-${i}" min="0" step="10" inputmode="decimal" value="${item.amount || ''}" placeholder="0" aria-label="${esc(item.name)} amount">
+      </div>
+      <button type="button" class="del" aria-label="Remove ${esc(item.name)}" title="Remove">✕</button>`;
+    row.querySelector('input').addEventListener('input', e => { state[type][i].amount = parseFloat(e.target.value) || 0; update(); });
+    row.querySelector('.del').addEventListener('click', () => { state[type].splice(i,1); renderRows(type); update(); });
+    container.appendChild(row);
+  });
+}
+function addItem(type){
+  const input = document.getElementById(type === 'income' ? 'newIncomeName' : 'newExpenseName');
+  const name = input.value.trim().slice(0,60);
+  if(!name) { input.focus(); return; }
+  const color = type === 'income' ? '#4E8D99' : customColors[customIdx++ % customColors.length];
+  state[type].push({name, amount:0, color});
+  input.value = '';
+  renderRows(type); update();
+  document.getElementById(type + 'Rows').lastElementChild.querySelector('input').focus();
+}
+document.getElementById('addIncomeBtn').addEventListener('click', () => addItem('income'));
+document.getElementById('addExpenseBtn').addEventListener('click', () => addItem('expense'));
+['newIncomeName','newExpenseName'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if(e.key === 'Enter') addItem(id === 'newIncomeName' ? 'income' : 'expense'); });
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(!confirm('Reset all values to the default example budget? Your saved numbers will be replaced.')) return;
+  state = structuredClone(DEFAULT_STATE); customIdx = 0;
+  renderRows('income'); renderRows('expense'); update();
+});
+
+function update(){
+  const inc = state.income.reduce((s,i)=>s+i.amount,0);
+  const exp = state.expense.reduce((s,i)=>s+i.amount,0);
+  const left = inc - exp;
+  document.getElementById('incomeTotal').textContent = fmt(inc);
+  document.getElementById('expenseTotal').textContent = fmt(exp);
+  document.getElementById('sumIncome').textContent = fmt(inc);
+  document.getElementById('sumExpense').textContent = fmt(exp);
+  const lo = document.getElementById('leftoverAmt');
+  lo.textContent = (left < 0 ? '−' : '') + fmt(Math.abs(left));
+  lo.className = 'leftover mono ' + (left < 0 ? 'neg' : 'pos');
+  document.getElementById('leftoverLabel').textContent = left < 0 ? 'Over budget' : 'Left over';
+  const bar = document.getElementById('allocBar'); bar.innerHTML = '';
+  const base = Math.max(inc, exp, 1);
+  state.expense.forEach(item => {
+    if(item.amount <= 0) return;
+    const seg = document.createElement('div'); seg.className = 'seg';
+    seg.style.width = (item.amount / base * 100) + '%'; seg.style.background = item.color;
+    seg.title = `${item.name}: ${fmt(item.amount)}`; bar.appendChild(seg);
+  });
+  const remSeg = document.createElement('div');
+  if(left >= 0){ remSeg.className = 'seg remain'; remSeg.style.width = (left / base * 100) + '%'; remSeg.title = `Left over: ${fmt(left)}`; }
+  else { remSeg.className = 'seg over'; remSeg.style.width = '0%'; }
+  bar.appendChild(remSeg);
+  const pct = inc > 0 ? Math.round(exp / inc * 100) : (exp > 0 ? 100 : 0);
+  document.getElementById('pctSpent').textContent = pct + '% of income allocated';
+  document.getElementById('pctLeft').textContent = left >= 0 ? `${fmt(left)} unallocated` : `${fmt(Math.abs(left))} over income`;
+  saveState();
+}
+
+(function(){
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if(isIOS && !isStandalone && localStorage.getItem(HINT_KEY) !== '1') document.getElementById('iosHint').classList.add('show');
+  document.getElementById('iosHintClose').addEventListener('click', () => {
+    document.getElementById('iosHint').classList.remove('show');
+    try{ localStorage.setItem(HINT_KEY, '1'); }catch(e){}
+  });
+})();
+document.getElementById('year').textContent = new Date().getFullYear();
+renderRows('income'); renderRows('expense'); update();
+if('serviceWorker' in navigator){ window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
+</script>
+</body>
+</html>
