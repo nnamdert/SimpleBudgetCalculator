@@ -3,6 +3,8 @@
 A one-page monthly budget calculator that installs as an app on phones and desktops and works offline.
 No accounts, no server code, no tracking. Everything the user types stays in their own browser.
 
+**Live demo:** https://nnamdert.github.io/SimpleBudgetCalculator/
+
 © nnamdert.page. Free to use and host. Keep the footer credit intact.
 
 ## What it does
